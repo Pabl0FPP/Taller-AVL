@@ -109,56 +109,71 @@ import java.util.Queue;
         }
 
         public void delete(T goal) {
-            delete(null, root, goal);
+            root = delete(root, goal);
         }
 
-        private void delete(Node<T> parent, Node<T> current, T goal) {
+        private Node<T> delete(Node<T> current, T goal) {
             if (current == null) {
-                return;
+                return null;
             }
-            //  Encontramos al nodo
-            if (goal.equals(current.getKey())) {
 
-                //  Es un nodo hoja
-                if (current.getRight() == null && current.getLeft() == null) {
-                    if (current.getLeft() == current) {
-                        parent.setLeft(null);
-                    } else {
-                        parent.setRight(null);
-                    }
-                }
-
-                //eliminar un nodo que tiene un hijo derecho
-                else if (current.getRight() != null && current.getLeft() == null) {
-                    if (parent.getLeft() == current) {
-                        parent.setRight(current.getRight());
-                    } else {
-                        parent.setRight(current.getRight());
-                    }
-
-                    // Delete a node with a left child
-                } else if (current.getRight() == null && current.getLeft() != null) {
-                    if (parent.getLeft() == current) {
-                        parent.setLeft(current.getLeft());
-                    } else {
-                        parent.setRight(current.getLeft());
-                    }
-
-                    // Delete a node with 2 children
-                } else if (current.getRight() != null && current.getLeft() != null) {
-                    Node<T> successor = getMin(current.getRight());
-                    // Overwrite the key and values
-                    current.setKey(successor.getKey());
-                    // If it has values, do current.setValue(successor.getValue())
-                    delete(current, current.getRight(), successor.getKey());
-                }
-
-            } else if (goal.compareTo(current.getKey()) < 0) {
-                delete(current, current.getLeft(), goal);
+            // Buscar el nodo deseado
+            if (goal.compareTo(current.getKey()) < 0) {
+                current.setLeft(delete(current.getLeft(), goal));
             } else if (goal.compareTo(current.getKey()) > 0) {
-                delete(current, current.getRight(), goal);
+                current.setRight(delete(current.getRight(), goal));
+            } else { // Encontrar el nodo deseado para eliminar
+                // Eliminar un nodo hoja
+                if (current.getLeft() == null && current.getRight() == null) {
+                    current = null;
+                }
+                // Eliminar un nodo con un solo hijo
+                else if (current.getLeft() == null || current.getRight() == null) {
+                    if (current.getLeft() == null) {
+                        current = current.getRight();
+                    } else {
+                        current = current.getLeft();
+                    }
+                }
+                // Eliminar un nodo con dos hijos
+                else {
+                    Node<T> successor = getSuccessor(current);
+                    current.setKey(successor.getKey());
+                    current.setRight(delete(current.getRight(), successor.getKey()));
+                }
             }
+
+            // Reequilibrar el árbol
+            if (current != null) {
+                int balance = getBalanceFactor(current);
+                if (balance > 1) {
+                    if (getBalanceFactor(current.getLeft()) >= 0) {
+                        current = rotateRight(current);
+                    } else {
+                        current.setLeft(rotateLeft(current.getLeft()));
+                        current = rotateRight(current);
+                    }
+                } else if (balance < -1) {
+                    if (getBalanceFactor(current.getRight()) <= 0) {
+                        current = rotateLeft(current);
+                    } else {
+                        current.setRight(rotateRight(current.getRight()));
+                        current = rotateLeft(current);
+                    }
+                }
+            }
+
+            return current;
         }
+
+        private Node<T> getSuccessor(Node<T> current) {
+            Node<T> successor = current.getRight();
+            while (successor.getLeft() != null) {
+                successor = successor.getLeft();
+            }
+            return successor;
+        }
+
 
         public String printLevels() {
             if (root == null) {
